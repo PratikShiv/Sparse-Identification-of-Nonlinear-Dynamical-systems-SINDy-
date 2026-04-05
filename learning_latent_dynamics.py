@@ -574,7 +574,7 @@ class SINDyModel(nn.Module):
     The input to the latent_dynamics_model must be the latent states and actions concatentated along the last dimension.
     """
 
-    def __init__(self, latent_dim, action_dim, poly_order, include_sine, sequential_thresholding, num_channels=3):
+    def __init__(self, latent_dim, action_dim, poly_order, include_sine, sequential_thresholding=True, num_channels=3):
         super().__init__()
         self.latent_dim = latent_dim
         self.action_dim = action_dim
@@ -994,8 +994,12 @@ class PushingLatentController(object):
 
         # ---
         action_tensor = self.mppi.command(latent_tensor)
-        # --- Your code here
-        action = action_tensor.detach().numpy()
+        if not torch.isfinite(action_tensor).all():
+            action_tensor = torch.nan_to_num(action_tensor, nan=0.0, posinf=0.0, neginf=0.0)
+        action_tensor = torch.max(torch.min(action_tensor,
+                                           torch.from_numpy(self.env.action_space.high)),
+                                   torch.from_numpy(self.env.action_space.low))
+        action = action_tensor.detach().cpu().numpy()
 
 
         # ---

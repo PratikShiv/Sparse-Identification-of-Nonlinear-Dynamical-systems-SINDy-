@@ -1,5 +1,5 @@
-import gym
-from gym import spaces
+import gymnasium as gym
+from gymnasium import spaces
 
 import os, inspect
 
@@ -91,6 +91,13 @@ class PandaImageSpacePushingEnv(gym.Env):
         self.img_width = img_width
         self.img_height = img_height
         self.grayscale = grayscale
+
+        # User debug camera view for the GUI
+        self.user_camera_target = [0.55, 0.0, 0.15]
+        self.user_camera_yaw = 55
+        self.user_camera_pitch = -35
+        self.user_camera_dist = 1.2
+
         # self.camera_pos_top = [(self.space_limits[0][0] + self.space_limits[1][0]) / 2,
         self.camera_pos_top = [self.space_limits[1][0]*0.7 + 0.3 * self.space_limits[0][0] ,
                                (self.space_limits[0][1] + self.space_limits[1][1]) / 2,
@@ -100,8 +107,11 @@ class PandaImageSpacePushingEnv(gym.Env):
         self.camera_orn_top = [90, -95, 0]
         self.camera_dist_top = 0.7
 
-        # p.resetDebugVisualizerCamera(cameraDistance=1.5, cameraYaw=0, cameraPitch=-40,cameraTargetPosition=[0.55, -0.35, 0.2])
-        p.resetDebugVisualizerCamera(cameraDistance=self.camera_dist_top, cameraYaw=self.camera_orn_top[0], cameraPitch=self.camera_orn_top[1], cameraTargetPosition=self.camera_pos_top) # TODO: Remove
+        if self.debug:
+            p.resetDebugVisualizerCamera(cameraDistance=self.user_camera_dist,
+                                         cameraYaw=self.user_camera_yaw,
+                                         cameraPitch=self.user_camera_pitch,
+                                         cameraTargetPosition=self.user_camera_target)
 
         self.block_size = BOX_SIZE
 
@@ -157,7 +167,8 @@ class PandaImageSpacePushingEnv(gym.Env):
         p.setCollisionFilterGroupMask(self.targetUid, -1, 0, 0)  # remove collisions with targeUid
         p.setCollisionFilterPair(self.pandaUid, self.targetUid, -1, -1, 0)  # remove collision between robot and target
 
-        # p.changeVisualShape(self.targetUid, -1, rgbaColor=[0.05, 0.95, 0.05, .01])  # Change color for target
+        # Make the target object clearly visible as a green box
+        p.changeVisualShape(self.targetUid, -1, rgbaColor=[0.0, 1.0, 0.0, 1.0])
 
         # Set robot to rest configuration
         self.move_robot_rest_configuration()
